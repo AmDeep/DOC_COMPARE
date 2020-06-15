@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+
+dn="$(dirname "$(readlink -f "$0")")"
+
+# This is a hack
+author="\0"
+outfile="\0"
+name="Compare results"
+keep_open="0"
+
+positional=()
+while [[ $# -gt 0 ]]
+do
+key="$1"
+case $key in
+    -a|--author)
+    author="$2"
+    shift # past argument
+    ;;
+    -o|--output)
+    outfile="$(readlink -f "$2")"
+    shift # past argument
+    ;;
+    -k|--keep-open)
+    keep_open="1"
+    ;;
+    *)    # unknown option
+    positional+=("$1") # save it in an array for later
+    ;;
+esac
+shift
+done
+set -- "${positional[@]}" # restore positional parameters
+
+base="$(readlink -f "$1")"
+changed="$(readlink -f "$2")"
+
+admonish="file not specified or nonexistant"
+[ ! -f "$base" ] && echo "Base $admonish" && exit 1
+[ ! -f "$changed" ] && echo "Change $admonish" && exit 1
+
+osascript "$dn/../script/compare-documents.scpt" \
+  "$base" "$changed" "$outfile" \
+  "$author" "$name" $keep_open
+
